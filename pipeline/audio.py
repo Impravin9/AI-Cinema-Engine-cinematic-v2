@@ -26,27 +26,86 @@ def probe_duration(path) -> float | None:
         return None
 
 
+def _windows_sapi_narrate(text: str, output: Path) -> bool:
+    """Offline Windows speech fallback; writes a WAV without requiring internet."""
+    import base64
+    import os
+    if os.name != "nt":
+        return False
+    encoded = base64.b64encode(text.encode("utf-8")).decode("ascii")
+    script = (
+        "Add-Type -AssemblyName System.Speech; "
+        "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+        "$s.SetOutputToWaveFile($args[0]); "
+        "$t = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($args[1])); "
+        "$s.Speak($t); $s.Dispose()"
+    )
+    try:
+        subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+             "-Command", script, str(output), encoded],
+            check=True, capture_output=True, text=True, timeout=90,
+        )
+        return output.exists() and output.stat().st_size > 1024
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def narrate(scenes, workdir: Path, voice: str, rate: str, log=print) -> dict[int, Path]:
+    """Generate cached narration; fall back to offline Windows speech if Edge TTS stalls."""
     try:
         import edge_tts
     except ImportError:
-        log("[cinematic] edge-tts not installed: narration skipped (pip install edge-tts)")
-        return {}
+        edge_tts = None
+
     d = Path(workdir) / "narration"
     d.mkdir(parents=True, exist_ok=True)
     out: dict[int, Path] = {}
     for i, sc in enumerate(scenes):
         text = str(sc.get("text", "")).strip()
-        p = d / f"n{i:03d}_{hashlib.sha1(f'{voice}|{rate}|{text}'.encode()).hexdigest()[:10]}.mp3"
-        if not p.exists():
-            try:
-                asyncio.run(edge_tts.Communicate(text, voice, rate=rate).save(str(p)))
-            except Exception as exc:  # network/service errors: degrade gracefully
-                log(f"[cinematic] TTS unavailable ({type(exc).__name__}); continuing without narration")
-                return out
-        out[i] = p
-    return out
+        if not text:
+            continue
+        key = hashlib.sha1(f"{voice}|{rate}|{text}".encode()).hexdigest()[:10]
+        mp3 = d / f"n{i:03d}_{key}.mp3"
+        wav = d / f"n{i:03d}_{key}_offline.wav"
 
+        if mp3.exists() and mp3.stat().st_size > 1024:
+            out[i] = mp3
+            continue
+        if wav.exists() and wav.stat().st_size > 1024:
+            out[i] = wav
+            continue
+
+        # Edge TTS can hang while waiting for its online websocket service.
+        if edge_tts is not None:
+            try:
+                async def _save_with_timeout():
+                    await asyncio.wait_for(
+                        edge_tts.Communicate(text, voice, rate=rate).save(str(mp3)),
+                        timeout=30,
+                    )
+                asyncio.run(_save_with_timeout())
+                if mp3.exists() and mp3.stat().st_size > 1024:
+                    out[i] = mp3
+                    log(f"[cinematic] narration {i + 1}/{len(scenes)}: online voice")
+                    continue
+            except (Exception, asyncio.CancelledError) as exc:
+                log(f"[cinematic] online TTS unavailable for scene {i + 1} ({type(exc).__name__}); trying offline voice")
+            finally:
+                if mp3.exists() and mp3.stat().st_size <= 1024:
+                    mp3.unlink(missing_ok=True)
+
+        if _windows_sapi_narrate(text, wav):
+            out[i] = wav
+            log(f"[cinematic] narration {i + 1}/{len(scenes)}: offline Windows voice")
+        else:
+            log(f"[cinematic] narration unavailable for scene {i + 1}; continuing with music and sound design")
+
+    if not out:
+        log("[cinematic] WARNING: no narration clips were generated")
+    elif len(out) < len([s for s in scenes if str(s.get("text", "")).strip()]):
+        log(f"[cinematic] WARNING: narration generated for {len(out)} of {len(scenes)} scenes")
+    return out
 
 def _wav(path, x):
     x = np.clip(x, -1, 1)
