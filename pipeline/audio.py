@@ -91,6 +91,7 @@ def narrate(scenes, workdir: Path, voice: str, rate: str, log=print) -> dict[int
                     continue
             except (Exception, asyncio.CancelledError) as exc:
                 log(f"[cinematic] online TTS unavailable for scene {i + 1} ({type(exc).__name__}); trying offline voice")
+                mp3.unlink(missing_ok=True)
             finally:
                 if mp3.exists() and mp3.stat().st_size <= 1024:
                     mp3.unlink(missing_ok=True)
