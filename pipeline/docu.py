@@ -384,6 +384,15 @@ class DocuRenderer:
         yy, xx = np.mgrid[0:height, 0:width].astype(np.float32)
         r2 = ((xx / width - .5) ** 2 + (yy / height - .5) ** 2) * 2.2
         self.vig = np.clip(1 - .55 * r2, .35, 1)[..., None]
+        # Exact float32 lookup for the per-channel filmic sigmoid. The old
+        # implementation evaluated exp() over all 6.2M channel values on
+        # every frame. Precomputing the 256 possible input values preserves
+        # the same curve while replacing millions of exponentials per frame
+        # with a fast indexed lookup.
+        _v = np.arange(256, dtype=np.float32) / 255.0
+        _sig = lambda z: 1.0 / (1.0 + np.exp(-(z - .5) * 5.0))
+        _s0, _s1 = _sig(np.float32(0.0)), _sig(np.float32(1.0))
+        self._tone_lut = ((_sig(_v) - _s0) / (_s1 - _s0)).astype(np.float32)
         self.total = sum(s["frames"] for s in self.shots)
         th = self.theme = plan.get("theme") or {}
         self.acc = tuple(th["accent"]) if th else None
@@ -473,9 +482,9 @@ class DocuRenderer:
         return base.convert("RGB")
 
     def _grade(self, im):
-        x = np.asarray(im, np.float32) / 255
-        s = lambda v: 1 / (1 + np.exp(-(v - .5) * 5))
-        x = (s(x) - s(0.0)) / (s(1.0) - s(0.0))
+        # Same sigmoid filmic curve as before, evaluated through the
+        # precomputed float32 LUT created once in __init__.
+        x = self._tone_lut[np.asarray(im)]
         lum = x.mean(2, keepdims=True)
         x = x + (1 - lum) ** 2 * self.shadow + lum ** 2 * self.high
         b = Image.fromarray((np.clip(x - .6, 0, 1) * 255).astype(np.uint8)).resize((self.W // 4, self.H // 4), Image.BILINEAR)
