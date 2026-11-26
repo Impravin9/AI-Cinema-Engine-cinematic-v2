@@ -29,6 +29,11 @@ def run(script, out, *, plan_path=None, resolution="720p", max_scenes=None, sile
     if not ffmpeg:
         raise RuntimeError("FFmpeg is required (https://ffmpeg.org). Install it and retry.")
     W, H, fps = RES[resolution]
+    output_size = (W, H)
+    # Compose 1080p deliverables at 720p on constrained laptops, then upscale
+    # once in FFmpeg. Final dimensions, fps, CRF, audio and visual treatment stay.
+    if resolution == "1080p":
+        W, H = 1280, 720
     scenes, pchars, title, roles = _load(script, plan_path)
     scenes = scenes[:max_scenes] if max_scenes else scenes
     if not scenes:
@@ -72,7 +77,7 @@ def run(script, out, *, plan_path=None, resolution="720p", max_scenes=None, sile
 
     log(f"[cinematic] 4/7 rendering {len(shots)} shots, {total:.1f}s at {W}x{H}")
     video = wd / "video_silent.mp4"
-    DocuRenderer({"shots": shots, "theme": theme}, W, H, fps).render(str(video), ffmpeg, log)
+    DocuRenderer({"shots": shots, "theme": theme}, W, H, fps, output_size=output_size).render(str(video), ffmpeg, log)
 
     log("[cinematic] 5/7 audio")
     music, sfx, mixed = wd / "music.wav", wd / "sfx.wav", wd / "mix.wav"
