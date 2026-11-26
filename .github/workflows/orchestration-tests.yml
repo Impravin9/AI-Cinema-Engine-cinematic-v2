@@ -1,0 +1,22 @@
+name: Python orchestration tests
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install Pillow numpy
+      - name: Compile Python entry points and adapters
+        run: python -m compileall -q cinema.py lego_cinema_fixes.py realistic_director.py asset_licensing.py asset_library.py lego_modern.py lego_boost.py cinematic_pipeline.py pipeline core tests
+      - name: Run orchestration, LEGO, realistic director, asset-licensing and asset-library tests
+        run: python -m unittest discover -s tests -v

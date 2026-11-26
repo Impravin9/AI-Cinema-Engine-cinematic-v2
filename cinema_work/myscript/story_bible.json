@@ -1,0 +1,866 @@
+{
+  "characters": {
+    "Hitler": {
+      "first_scene": 0,
+      "scenes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        13,
+        14,
+        23,
+        27,
+        30,
+        31,
+        34,
+        35,
+        36,
+        37,
+        41,
+        42,
+        47,
+        48,
+        49,
+        54,
+        58,
+        69,
+        79,
+        87,
+        88,
+        89,
+        90,
+        92,
+        93,
+        95,
+        96,
+        102,
+        103
+      ]
+    },
+    "Leningrad": {
+      "first_scene": 1,
+      "scenes": [
+        1,
+        2,
+        3,
+        91,
+        93
+      ]
+    },
+    "Denmark": {
+      "first_scene": 1,
+      "scenes": [
+        1,
+        70
+      ]
+    },
+    "Germany": {
+      "first_scene": 2,
+      "scenes": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        26,
+        27,
+        55,
+        70,
+        91,
+        99
+      ]
+    },
+    "Versailles": {
+      "first_scene": 4,
+      "scenes": [
+        4,
+        5
+      ]
+    },
+    "Air": {
+      "first_scene": 6,
+      "scenes": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        81,
+        90
+      ]
+    },
+    "Force": {
+      "first_scene": 6,
+      "scenes": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        42,
+        81
+      ]
+    },
+    "German": {
+      "first_scene": 9,
+      "scenes": [
+        9,
+        10,
+        11,
+        12,
+        25,
+        26,
+        28,
+        29,
+        43,
+        59,
+        84,
+        85,
+        95
+      ]
+    },
+    "Germans": {
+      "first_scene": 12,
+      "scenes": [
+        12,
+        19,
+        20,
+        21,
+        22
+      ]
+    },
+    "Munich": {
+      "first_scene": 13,
+      "scenes": [
+        13,
+        14,
+        51,
+        52,
+        53
+      ]
+    },
+    "Adolf": {
+      "first_scene": 13,
+      "scenes": [
+        13,
+        14
+      ]
+    },
+    "Mein": {
+      "first_scene": 15,
+      "scenes": [
+        15,
+        16,
+        17
+      ]
+    },
+    "Kampf": {
+      "first_scene": 15,
+      "scenes": [
+        15,
+        16
+      ]
+    },
+    "Jews": {
+      "first_scene": 15,
+      "scenes": [
+        15,
+        16
+      ]
+    },
+    "Nazi": {
+      "first_scene": 17,
+      "scenes": [
+        17
+      ]
+    },
+    "Party": {
+      "first_scene": 17,
+      "scenes": [
+        17
+      ]
+    },
+    "New": {
+      "first_scene": 18,
+      "scenes": [
+        18,
+        19,
+        20
+      ]
+    },
+    "York": {
+      "first_scene": 18,
+      "scenes": [
+        18
+      ]
+    },
+    "Banks": {
+      "first_scene": 19,
+      "scenes": [
+        19,
+        20,
+        21,
+        22
+      ]
+    },
+    "Nazis": {
+      "first_scene": 21,
+      "scenes": [
+        21,
+        22
+      ]
+    },
+    "January": {
+      "first_scene": 23,
+      "scenes": [
+        23,
+        24
+      ]
+    },
+    "Enabling": {
+      "first_scene": 24,
+      "scenes": [
+        24,
+        25,
+        26
+      ]
+    },
+    "Act": {
+      "first_scene": 24,
+      "scenes": [
+        24,
+        25
+      ]
+    },
+    "France": {
+      "first_scene": 27,
+      "scenes": [
+        27,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        54,
+        60,
+        61,
+        69,
+        71,
+        79
+      ]
+    },
+    "March": {
+      "first_scene": 28,
+      "scenes": [
+        28,
+        29,
+        41
+      ]
+    },
+    "Rhine": {
+      "first_scene": 28,
+      "scenes": [
+        28
+      ]
+    },
+    "French": {
+      "first_scene": 30,
+      "scenes": [
+        30,
+        31,
+        32,
+        66,
+        67,
+        68,
+        69,
+        72,
+        75
+      ]
+    },
+    "Britain": {
+      "first_scene": 32,
+      "scenes": [
+        32,
+        33,
+        54,
+        60,
+        80,
+        84,
+        85,
+        86
+      ]
+    },
+    "Neither": {
+      "first_scene": 33,
+      "scenes": [
+        33,
+        34
+      ]
+    },
+    "Nobody": {
+      "first_scene": 35,
+      "scenes": [
+        35,
+        36,
+        37,
+        41,
+        42,
+        57
+      ]
+    },
+    "Japan": {
+      "first_scene": 38,
+      "scenes": [
+        38,
+        39,
+        40,
+        99,
+        100,
+        101
+      ]
+    },
+    "Manchuria": {
+      "first_scene": 38,
+      "scenes": [
+        38
+      ]
+    },
+    "China": {
+      "first_scene": 38,
+      "scenes": [
+        38
+      ]
+    },
+    "League": {
+      "first_scene": 39,
+      "scenes": [
+        39,
+        40
+      ]
+    },
+    "Nations": {
+      "first_scene": 39,
+      "scenes": [
+        39,
+        40
+      ]
+    },
+    "Czechoslovakia": {
+      "first_scene": 43,
+      "scenes": [
+        43,
+        46,
+        47,
+        49
+      ]
+    },
+    "Sudetenland": {
+      "first_scene": 43,
+      "scenes": [
+        43,
+        45,
+        50,
+        51
+      ]
+    },
+    "September": {
+      "first_scene": 44,
+      "scenes": [
+        44,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64
+      ]
+    },
+    "British": {
+      "first_scene": 44,
+      "scenes": [
+        44,
+        75,
+        76,
+        77
+      ]
+    },
+    "Chamberlain": {
+      "first_scene": 44,
+      "scenes": [
+        44,
+        48
+      ]
+    },
+    "London": {
+      "first_scene": 45,
+      "scenes": [
+        45,
+        46,
+        47,
+        48,
+        82,
+        83,
+        84
+      ]
+    },
+    "Paris": {
+      "first_scene": 45,
+      "scenes": [
+        45,
+        46
+      ]
+    },
+    "Six": {
+      "first_scene": 49,
+      "scenes": [
+        49,
+        52,
+        53,
+        79,
+        100
+      ]
+    },
+    "Churchill": {
+      "first_scene": 51,
+      "scenes": [
+        51,
+        52,
+        78,
+        82,
+        83
+      ]
+    },
+    "Poland": {
+      "first_scene": 53,
+      "scenes": [
+        53,
+        56,
+        57,
+        59,
+        63,
+        64
+      ]
+    },
+    "August": {
+      "first_scene": 55,
+      "scenes": [
+        55,
+        56
+      ]
+    },
+    "Soviet": {
+      "first_scene": 55,
+      "scenes": [
+        55,
+        62,
+        92,
+        93
+      ]
+    },
+    "Baltic": {
+      "first_scene": 56,
+      "scenes": [
+        56,
+        57
+      ]
+    },
+    "East": {
+      "first_scene": 58,
+      "scenes": [
+        58,
+        90
+      ]
+    },
+    "Front": {
+      "first_scene": 58,
+      "scenes": [
+        58,
+        65
+      ]
+    },
+    "Poles": {
+      "first_scene": 61,
+      "scenes": [
+        61
+      ]
+    },
+    "Union": {
+      "first_scene": 62,
+      "scenes": [
+        62,
+        92
+      ]
+    },
+    "Trapped": {
+      "first_scene": 63,
+      "scenes": [
+        63,
+        64,
+        75,
+        76,
+        77,
+        78
+      ]
+    },
+    "Western": {
+      "first_scene": 65,
+      "scenes": [
+        65
+      ]
+    },
+    "Phony": {
+      "first_scene": 65,
+      "scenes": [
+        65
+      ]
+    },
+    "Maginot": {
+      "first_scene": 66,
+      "scenes": [
+        66,
+        67,
+        68
+      ]
+    },
+    "Line": {
+      "first_scene": 66,
+      "scenes": [
+        66,
+        67,
+        68
+      ]
+    },
+    "April": {
+      "first_scene": 70,
+      "scenes": [
+        70
+      ]
+    },
+    "May": {
+      "first_scene": 71,
+      "scenes": [
+        71,
+        72
+      ]
+    },
+    "Belgium": {
+      "first_scene": 71,
+      "scenes": [
+        71,
+        72
+      ]
+    },
+    "Ardennes": {
+      "first_scene": 73,
+      "scenes": [
+        73
+      ]
+    },
+    "Panzers": {
+      "first_scene": 74,
+      "scenes": [
+        74
+      ]
+    },
+    "English": {
+      "first_scene": 74,
+      "scenes": [
+        74
+      ]
+    },
+    "Channel": {
+      "first_scene": 74,
+      "scenes": [
+        74
+      ]
+    },
+    "Dunkirk": {
+      "first_scene": 76,
+      "scenes": [
+        76,
+        77,
+        78
+      ]
+    },
+    "Royal": {
+      "first_scene": 81,
+      "scenes": [
+        81,
+        82,
+        83
+      ]
+    },
+    "Spitfire": {
+      "first_scene": 85,
+      "scenes": [
+        85,
+        86,
+        87,
+        88,
+        89
+      ]
+    },
+    "Luftwaffe": {
+      "first_scene": 86,
+      "scenes": [
+        86,
+        87,
+        88,
+        89
+      ]
+    },
+    "June": {
+      "first_scene": 91,
+      "scenes": [
+        91
+      ]
+    },
+    "Ladoga": {
+      "first_scene": 94,
+      "scenes": [
+        94
+      ]
+    },
+    "Road": {
+      "first_scene": 94,
+      "scenes": [
+        94
+      ]
+    },
+    "Moscow": {
+      "first_scene": 95,
+      "scenes": [
+        95
+      ]
+    },
+    "Japanese": {
+      "first_scene": 96,
+      "scenes": [
+        96
+      ]
+    },
+    "Hawaii": {
+      "first_scene": 96,
+      "scenes": [
+        96
+      ]
+    },
+    "Sunday": {
+      "first_scene": 97,
+      "scenes": [
+        97,
+        98
+      ]
+    },
+    "December": {
+      "first_scene": 97,
+      "scenes": [
+        97,
+        98
+      ]
+    },
+    "Pearl": {
+      "first_scene": 97,
+      "scenes": [
+        97
+      ]
+    },
+    "Congress": {
+      "first_scene": 98,
+      "scenes": [
+        98
+      ]
+    },
+    "Italy": {
+      "first_scene": 99,
+      "scenes": [
+        99
+      ]
+    },
+    "Philippines": {
+      "first_scene": 100,
+      "scenes": [
+        100
+      ]
+    },
+    "American": {
+      "first_scene": 101,
+      "scenes": [
+        101
+      ]
+    },
+    "Midway": {
+      "first_scene": 101,
+      "scenes": [
+        101
+      ]
+    },
+    "Stalingrad": {
+      "first_scene": 102,
+      "scenes": [
+        102
+      ]
+    },
+    "Sixth": {
+      "first_scene": 102,
+      "scenes": [
+        102
+      ]
+    },
+    "Allies": {
+      "first_scene": 103,
+      "scenes": [
+        103,
+        104,
+        105
+      ]
+    },
+    "Sicily": {
+      "first_scene": 103,
+      "scenes": [
+        103
+      ]
+    },
+    "Nagasaki": {
+      "first_scene": 104,
+      "scenes": [
+        104,
+        105
+      ]
+    },
+    "Einstein": {
+      "first_scene": 104,
+      "scenes": [
+        104,
+        105
+      ]
+    }
+  },
+  "locations": [
+    "battlefield",
+    "village",
+    "interior",
+    "forest",
+    "water"
+  ],
+  "arc": [
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "fear",
+    "fear",
+    "determined",
+    "fear",
+    "fear",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "fear",
+    "fear",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "joy",
+    "joy",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "fear",
+    "fear",
+    "sadness",
+    "sadness",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined",
+    "determined"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "default_renderer": "realistic",
+  "output_width": 1280,
+  "output_height": 720,
+  "fps": 24,
+  "intel_gpu": {
+    "enabled": "auto",
+    "video_encoder": "libx264",
+    "note": "Current realistic renderer uses FFmpeg libx264. Intel QSV can be evaluated separately after a runtime capability check."
+  },
+  "paths": {
+    "media": "media",
+    "music": "music",
+    "cache": "cache",
+    "output": "output"
+  }
+}
