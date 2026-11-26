@@ -684,40 +684,86 @@ class DocuRenderer:
         return ov
 
     def _chart(self, shot, t):
-        import matplotlib
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
+        """Draw animated charts with Pillow instead of rebuilding a Matplotlib
+        figure on every video frame. This keeps the same chart data, animation,
+        dark transparent plotting surface, grid, labels and accent styling while
+        avoiding thousands of expensive figure/layout/canvas operations.
+        """
         W, H, c = self.W, self.H, shot["chart"]
-        if getattr(self, "_fig_key", None) != shot["id"]:
-            if getattr(self, "_fig", None) is not None:
-                plt.close(self._fig)
-            self._fig = plt.figure(figsize=(W * .84 / 100, H * .56 / 100), dpi=100)
-            self._ax, self._fig_key = self._fig.add_axes([.06, .12, .92, .8]), shot["id"]
-        fig, ax = self._fig, self._ax
-        ax.clear()
-        fig.patch.set_alpha(0)
-        ax.set_facecolor((0, 0, 0, .3))
-        vals, n, p = c["values"], len(c["values"]), ease_out(t / 1.8)
-        col, x = tuple(v / 255 for v in (self.acc or (255, 180, 60))), np.arange(len(c["values"]))
+        cw, ch = max(1, int(W * .84)), max(1, int(H * .56))
+        scale = 2  # supersampling keeps thin lines and small labels crisp
+        im = Image.new("RGBA", (cw * scale, ch * scale), (0, 0, 0, 0))
+        d = ImageDraw.Draw(im, "RGBA")
+        left, right = int(cw * .075), int(cw * .025)
+        top, bottom = int(ch * .06), int(ch * .17)
+        x0, x1 = left * scale, (cw - right) * scale
+        y0, y1 = top * scale, (ch - bottom) * scale
+        vals, labels = c["values"], c["labels"]
+        n = len(vals)
+        if not n:
+            return im.resize((cw, ch), Image.LANCZOS)
+        p = ease_out(t / 1.8)
+        lo = min(0.0, min(vals))
+        hi = max(vals) * 1.18 or 1.0
+        if hi - lo < 1e-9:
+            hi = lo + 1.0
+        accent = tuple(self.acc or (255, 180, 60))
+        white = (245, 247, 252, 225)
+        grid = (255, 255, 255, 38)
+        plot_h, plot_w = y1 - y0, x1 - x0
+
+        def px(x):
+            return int(x0 + x * plot_w)
+        def py(v):
+            return int(y1 - (v - lo) / (hi - lo) * plot_h)
+        # Horizontal grid and unobtrusive y-axis labels.
+        tick_font = font(max(11, int(H * .022)) * scale, "body")
+        for k in range(5):
+            value = lo + (hi - lo) * k / 4
+            yy = int(y1 - plot_h * k / 4)
+            d.line((x0, yy, x1, yy), fill=grid, width=scale)
+            label = f"{value:,.0f}" if abs(value) >= 100 or float(value).is_integer() else f"{value:,.1f}"
+            d.text((x0 - 8 * scale, yy), label, font=tick_font, fill=(225, 229, 238, 190), anchor="rm")
+        # X labels retain every source category, as in the original chart.
+        xfont = font(max(10, int(H * .021)) * scale, "body")
+        xs = [px(i) if n == 1 else int(x0 + i * plot_w / (n - 1)) for i in range(n)]
+        for xx, label in zip(xs, labels):
+            d.text((xx, y1 + 9 * scale), str(label), font=xfont, fill=white, anchor="mt")
+        zero_y = min(y1, max(y0, py(0)))
+        if y0 <= zero_y <= y1:
+            d.line((x0, zero_y, x1, zero_y), fill=(255, 255, 255, 95), width=scale)
+
         if c["kind"] == "bar":
-            ax.bar(x, [v * clamp(p * n - i) for i, v in enumerate(vals)], color=col, width=.6)
+            slot = plot_w / max(1, n)
+            bar_w = max(2 * scale, int(slot * .60))
+            for i, (xx, value) in enumerate(zip(xs, vals)):
+                amount = value * clamp(p * n - i)
+                yy = py(amount)
+                base_y = zero_y if y0 <= zero_y <= y1 else y1
+                d.rounded_rectangle((int(xx - bar_w / 2), min(yy, base_y),
+                                     int(xx + bar_w / 2), max(yy, base_y)),
+                                    radius=2 * scale, fill=accent + (235,))
         else:
-            xs = np.linspace(0, max(.01, p * (n - 1)), 60)
-            ys = np.interp(xs, x, vals)
-            ax.plot(xs, ys, color=col, lw=4, solid_capstyle="round")
-            if c["kind"] == "area":
-                ax.fill_between(xs, ys, color=col, alpha=.35)
-            ax.scatter([xs[-1]], [ys[-1]], s=120, color="white", zorder=5)
-        ax.set_xlim(-.4, n - .6)
-        ax.set_ylim(min(0, min(vals)), max(vals) * 1.18 or 1)
-        ax.set_xticks(x)
-        ax.set_xticklabels(c["labels"])
-        ax.tick_params(colors="white", labelsize=H * .03 * .72)
-        ax.grid(color="white", alpha=.15)
-        for sp in ax.spines.values():
-            sp.set_visible(False)
-        fig.canvas.draw()
-        return Image.fromarray(np.asarray(fig.canvas.buffer_rgba()).copy()).convert("RGBA")
+            progress_x = max(0.0, min(float(n - 1), p * (n - 1)))
+            steps = max(2, min(240, int(plot_w / (3 * scale))))
+            line_pts = []
+            for j in range(steps + 1):
+                xv = progress_x * j / steps
+                idx = min(n - 1, int(xv))
+                frac = xv - idx
+                value = vals[idx] if idx == n - 1 else vals[idx] * (1 - frac) + vals[idx + 1] * frac
+                line_pts.append((px(xv / max(1, n - 1)), py(value)))
+            if c["kind"] == "area" and line_pts:
+                d.polygon([(line_pts[0][0], zero_y)] + line_pts +
+                          [(line_pts[-1][0], zero_y)], fill=accent + (75,))
+            if len(line_pts) > 1:
+                d.line(line_pts, fill=accent + (255,), width=4 * scale, joint="curve")
+            if line_pts:
+                ex, ey = line_pts[-1]
+                rr = 5 * scale
+                d.ellipse((ex - rr, ey - rr, ex + rr, ey + rr),
+                          fill=(255, 255, 255, 255), outline=accent + (255,), width=2 * scale)
+        return im.resize((cw, ch), Image.LANCZOS)
 
     def _doc_img(self, shot):
         if "doc:" + shot["id"] in self.cache:
@@ -804,7 +850,7 @@ class DocuRenderer:
         cmd = [ffmpeg, "-y", "-hide_banner", "-loglevel", "warning",
                "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{self.W}x{self.H}",
                "-r", str(self.fps), "-i", "-", "-an",
-               "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+               "-c:v", "libx264", "-preset", "veryfast", "-threads", "2", "-crf", "20",
                "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(out)]
         log(f"[cinematic] renderer initialized: {self.W}x{self.H} @ {self.fps} fps; {self.total} frames")
         log("[cinematic] preparing first frame (1080p procedural composition can take a little longer)...")
