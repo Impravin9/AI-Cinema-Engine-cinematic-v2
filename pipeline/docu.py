@@ -11,6 +11,7 @@ import math
 import os
 import re
 import subprocess
+import time
 from pathlib import Path
 
 import numpy as np
@@ -783,17 +784,55 @@ class DocuRenderer:
         return img
 
     def render(self, out: str, ffmpeg: str = "ffmpeg", log=print) -> None:
-        cmd = [ffmpeg, "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{self.W}x{self.H}",
-               "-r", str(self.fps), "-i", "-", "-c:v", "libx264", "-preset", "medium", "-crf", "23",
+        """Stream frames to FFmpeg with fast encoding and live progress/ETA.
+
+        The previous renderer only logged after a frame had finished, making a
+        costly first 1080p frame look like a frozen process. It also used x264's
+        medium preset, spending excessive time encoding procedurally generated
+        animation. Keep full output resolution and use a visually high-quality,
+        substantially faster x264 preset.
+        """
+        cmd = [ffmpeg, "-y", "-hide_banner", "-loglevel", "warning",
+               "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{self.W}x{self.H}",
+               "-r", str(self.fps), "-i", "-", "-an",
+               "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
                "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(out)]
+        log(f"[cinematic] renderer initialized: {self.W}x{self.H} @ {self.fps} fps; {self.total} frames")
+        log("[cinematic] preparing first frame (1080p procedural composition can take a little longer)...")
+        started = time.monotonic()
         p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+        last_log = started
+        completed = 0
         try:
             for i in range(self.total):
-                p.stdin.write(self.frame_at(i).tobytes())
-                if i % (self.fps * 5) == 0:
-                    log(f"[cinematic] frame {i}/{self.total}")
+                frame = self.frame_at(i)
+                if p.poll() is not None:
+                    raise RuntimeError(f"FFmpeg exited early with code {p.returncode}; check the FFmpeg warning above.")
+                p.stdin.write(frame.tobytes())
+                completed = i + 1
+                now = time.monotonic()
+                # Report once per second so slow frame generation never appears frozen.
+                if completed == 1 or completed % max(1, self.fps) == 0 or now - last_log >= 5:
+                    elapsed = max(.001, now - started)
+                    rate = completed / elapsed
+                    remaining = (self.total - completed) / max(rate, .001)
+                    log(f"[cinematic] rendered {completed}/{self.total} frames "
+                        f"({completed / self.total * 100:.1f}%) | {rate:.2f} fps | "
+                        f"elapsed {elapsed / 60:.1f} min | ETA {remaining / 60:.1f} min")
+                    last_log = now
             p.stdin.close()
-        except BrokenPipeError:
-            pass
-        if p.wait():
-            raise RuntimeError("FFmpeg failed while encoding the documentary video.")
+        except BrokenPipeError as exc:
+            if p.stdin and not p.stdin.closed:
+                p.stdin.close()
+            code = p.wait()
+            raise RuntimeError(f"FFmpeg stopped accepting frames (exit code {code}).") from exc
+        except Exception:
+            if p.stdin and not p.stdin.closed:
+                p.stdin.close()
+            p.terminate()
+            p.wait()
+            raise
+        code = p.wait()
+        if code:
+            raise RuntimeError(f"FFmpeg failed while encoding the documentary video (exit code {code}).")
+        log(f"[cinematic] video render complete: {completed} frames in {(time.monotonic() - started) / 60:.1f} min")
