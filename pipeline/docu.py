@@ -376,9 +376,16 @@ def _fmt(v):
 
 
 class DocuRenderer:
-    def __init__(self, plan: dict, width: int, height: int, fps: int):
+    def __init__(self, plan: dict, width: int, height: int, fps: int, output_size=None):
         self.plan, self.W, self.H, self.fps = plan, width, height, fps
+        self.output_size = output_size or (width, height)
         self.shots = plan["shots"]
+        # Precompute cumulative frame offsets; frame_at uses binary search.
+        self._shot_starts = []
+        _cursor = 0
+        for _shot in self.shots:
+            self._shot_starts.append(_cursor)
+            _cursor += _shot["frames"]
         self.cache: dict[str, tuple] = {}
         self.grain = np.random.default_rng(3)
         yy, xx = np.mgrid[0:height, 0:width].astype(np.float32)
@@ -813,13 +820,10 @@ class DocuRenderer:
 
     # ---- public
     def frame_at(self, gi: int) -> Image.Image:
-        acc, k = 0, 0
-        for k, s in enumerate(self.shots):
-            if gi < acc + s["frames"]:
-                break
-            acc += s["frames"]
+        import bisect
+        k = max(0, bisect.bisect_right(self._shot_starts, gi) - 1)
         s = self.shots[k]
-        j = gi - acc
+        j = gi - self._shot_starts[k]
         t, u = j / self.fps, j / max(1, s["frames"] - 1)
         img = self._grade(self._base(s, u, t))
         tf = 10 if k and self.shots[k - 1]["scene_index"] != s["scene_index"] else 5
@@ -849,10 +853,14 @@ class DocuRenderer:
         """
         cmd = [ffmpeg, "-y", "-hide_banner", "-loglevel", "warning",
                "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{self.W}x{self.H}",
-               "-r", str(self.fps), "-i", "-", "-an",
-               "-c:v", "libx264", "-preset", "veryfast", "-threads", "2", "-crf", "20",
-               "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(out)]
-        log(f"[cinematic] renderer initialized: {self.W}x{self.H} @ {self.fps} fps; {self.total} frames")
+               "-r", str(self.fps), "-i", "-", "-an"]
+        if self.output_size != (self.W, self.H):
+            ow, oh = self.output_size
+            cmd += ["-vf", f"scale={ow}:{oh}:flags=lanczos"]
+        cmd += ["-c:v", "libx264", "-preset", "veryfast", "-threads", "2", "-crf", "20",
+                "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(out)]
+        log(f"[cinematic] renderer initialized: {self.W}x{self.H} composition -> "
+            f"{self.output_size[0]}x{self.output_size[1]} output @ {self.fps} fps; {self.total} frames")
         log("[cinematic] preparing first frame (1080p procedural composition can take a little longer)...")
         started = time.monotonic()
         p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
