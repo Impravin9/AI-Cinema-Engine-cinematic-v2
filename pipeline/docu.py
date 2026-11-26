@@ -825,6 +825,7 @@ class DocuRenderer:
         s = self.shots[k]
         j = gi - self._shot_starts[k]
         t, u = j / self.fps, j / max(1, s["frames"] - 1)
+        self.grain = np.random.default_rng([3, gi])
         img = self._grade(self._base(s, u, t))
         tf = 10 if k and self.shots[k - 1]["scene_index"] != s["scene_index"] else 5
         if k and j < tf:
@@ -842,7 +843,7 @@ class DocuRenderer:
             img = Image.blend(Image.new("RGB", img.size), img, max(0, (self.total - 1 - gi) / 18))
         return img
 
-    def render(self, out: str, ffmpeg: str = "ffmpeg", log=print) -> None:
+    def render(self, out: str, ffmpeg: str = "ffmpeg", log=print, workers=None) -> None:
         """Stream frames to FFmpeg with fast encoding and live progress/ETA.
 
         The previous renderer only logged after a frame had finished, making a
@@ -867,11 +868,19 @@ class DocuRenderer:
         last_log = started
         completed = 0
         try:
-            for i in range(self.total):
-                frame = self.frame_at(i)
+            nw = workers if workers is not None else int(os.environ.get("CINEMA_WORKERS", 0)) or min(os.cpu_count() or 1, 8)
+            if nw > 1 and self.total >= 48:
+                import multiprocessing as mp
+                pool = mp.get_context("spawn").Pool(nw, _pool_init, (self.plan, self.W, self.H, self.fps, self.output_size))
+                frames = pool.imap(_pool_frame, range(self.total), chunksize=max(4, self.fps))
+                log(f"[cinematic] parallel render: {nw} workers")
+            else:
+                pool = None
+                frames = (self.frame_at(i).tobytes() for i in range(self.total))
+            for i, fb in enumerate(frames):
                 if p.poll() is not None:
                     raise RuntimeError(f"FFmpeg exited early with code {p.returncode}; check the FFmpeg warning above.")
-                p.stdin.write(frame.tobytes())
+                p.stdin.write(fb)
                 completed = i + 1
                 now = time.monotonic()
                 # Report once per second so slow frame generation never appears frozen.
@@ -884,12 +893,18 @@ class DocuRenderer:
                         f"elapsed {elapsed / 60:.1f} min | ETA {remaining / 60:.1f} min")
                     last_log = now
             p.stdin.close()
+            if pool:
+                pool.close(); pool.join()
         except BrokenPipeError as exc:
+            if locals().get("pool"):
+                pool.terminate()
             if p.stdin and not p.stdin.closed:
                 p.stdin.close()
             code = p.wait()
             raise RuntimeError(f"FFmpeg stopped accepting frames (exit code {code}).") from exc
-        except Exception:
+        except BaseException:
+            if locals().get("pool"):
+                pool.terminate()
             if p.stdin and not p.stdin.closed:
                 p.stdin.close()
             p.terminate()
@@ -899,3 +914,15 @@ class DocuRenderer:
         if code:
             raise RuntimeError(f"FFmpeg failed while encoding the documentary video (exit code {code}).")
         log(f"[cinematic] video render complete: {completed} frames in {(time.monotonic() - started) / 60:.1f} min")
+
+
+_W = None
+
+
+def _pool_init(plan, w, h, fps, osz):
+    global _W
+    _W = DocuRenderer(plan, w, h, fps, osz)
+
+
+def _pool_frame(i):
+    return _W.frame_at(i).tobytes()
