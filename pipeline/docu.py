@@ -701,7 +701,7 @@ class DocuRenderer:
         vals, labels = c["values"], c["labels"]
         n = len(vals)
         if not n:
-            return im.resize((cw, ch), Image.Resampling.LANCZOS)
+            return im.resize((cw, ch), Image.LANCZOS)
         p = ease_out(t / 1.8)
         lo = min(0.0, min(vals))
         hi = max(vals) * 1.18 or 1.0
@@ -717,7 +717,7 @@ class DocuRenderer:
         def py(v):
             return int(y1 - (v - lo) / (hi - lo) * plot_h)
         # Horizontal grid and unobtrusive y-axis labels.
-        tick_font = font(max(11, int(H * .022)), "body")
+        tick_font = font(max(11, int(H * .022)) * scale, "body")
         for k in range(5):
             value = lo + (hi - lo) * k / 4
             yy = int(y1 - plot_h * k / 4)
@@ -725,11 +725,11 @@ class DocuRenderer:
             label = f"{value:,.0f}" if abs(value) >= 100 or float(value).is_integer() else f"{value:,.1f}"
             d.text((x0 - 8 * scale, yy), label, font=tick_font, fill=(225, 229, 238, 190), anchor="rm")
         # X labels retain every source category, as in the original chart.
-        xfont = font(max(10, int(H * .021)), "body")
+        xfont = font(max(10, int(H * .021)) * scale, "body")
         xs = [px(i) if n == 1 else int(x0 + i * plot_w / (n - 1)) for i in range(n)]
         for xx, label in zip(xs, labels):
             d.text((xx, y1 + 9 * scale), str(label), font=xfont, fill=white, anchor="mt")
-        zero_y = py(0)
+        zero_y = min(y1, max(y0, py(0)))
         if y0 <= zero_y <= y1:
             d.line((x0, zero_y, x1, zero_y), fill=(255, 255, 255, 95), width=scale)
 
