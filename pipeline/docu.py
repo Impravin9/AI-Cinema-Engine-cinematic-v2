@@ -763,7 +763,7 @@ class DocuRenderer:
                 rr = 5 * scale
                 d.ellipse((ex - rr, ey - rr, ex + rr, ey + rr),
                           fill=(255, 255, 255, 255), outline=accent + (255,), width=2 * scale)
-        return im.resize((cw, ch), Image.Resampling.LANCZOS)
+        return im.resize((cw, ch), Image.LANCZOS)
 
     def _doc_img(self, shot):
         if "doc:" + shot["id"] in self.cache:
