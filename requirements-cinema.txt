@@ -1,0 +1,6 @@
+# Dependencies already used by the existing renderers; install only what is missing.
+numpy
+Pillow
+scipy
+edge-tts
+requests
