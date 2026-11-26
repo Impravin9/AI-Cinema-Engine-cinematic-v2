@@ -61,6 +61,7 @@ def narrate(scenes, workdir: Path, voice: str, rate: str, log=print) -> dict[int
     d = Path(workdir) / "narration"
     d.mkdir(parents=True, exist_ok=True)
     out: dict[int, Path] = {}
+    online_available = edge_tts is not None
     for i, sc in enumerate(scenes):
         text = str(sc.get("text", "")).strip()
         if not text:
@@ -77,7 +78,7 @@ def narrate(scenes, workdir: Path, voice: str, rate: str, log=print) -> dict[int
             continue
 
         # Edge TTS can hang while waiting for its online websocket service.
-        if edge_tts is not None:
+        if online_available:
             try:
                 async def _save_with_timeout():
                     await asyncio.wait_for(
@@ -90,7 +91,8 @@ def narrate(scenes, workdir: Path, voice: str, rate: str, log=print) -> dict[int
                     log(f"[cinematic] narration {i + 1}/{len(scenes)}: online voice")
                     continue
             except (Exception, asyncio.CancelledError) as exc:
-                log(f"[cinematic] online TTS unavailable for scene {i + 1} ({type(exc).__name__}); trying offline voice")
+                log(f"[cinematic] online TTS unavailable ({type(exc).__name__}); switching remaining scenes to offline voice")
+                online_available = False
                 mp3.unlink(missing_ok=True)
             finally:
                 if mp3.exists() and mp3.stat().st_size <= 1024:
