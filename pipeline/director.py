@@ -85,9 +85,19 @@ def _extras(arch, text, years, flat, nums, rng):
             return {"left": {"label": _trim(lt, 5, True) or "Before", "value": vals[0]},
                     "right": {"label": _trim(rt, 5, True) or "After", "value": vals[1]}}
         else:
+            # A split-comparison archetype can be selected by the variety engine
+            # for words such as "compared" or "instead", which are not all covered
+            # by this module's contrast regex. Never assume a contrast match exists.
             m = _CONTRAST.search(text)
-            left, right, lv, rv = text[:m.start()], text[m.end():], None, None
-        return {"left": {"label": _trim(left.split(), 8, True), "value": None}, "right": {"label": _trim(right.split(), 8), "value": None}}
+            if m:
+                left, right = text[:m.start()], text[m.end():]
+            else:
+                words = text.split()
+                midpoint = max(1, len(words) // 2)
+                left, right = " ".join(words[:midpoint]), " ".join(words[midpoint:])
+        left_label = _trim(left.split(), 8, True) or "Context"
+        right_label = _trim(right.split(), 8) or "Comparison"
+        return {"left": {"label": left_label, "value": None}, "right": {"label": right_label, "value": None}}
     if arch == "kinetic_quote":
         q = QUOTE.search(text)
         return {"quote": q.group(1) if q else text, "is_quote": bool(q)}
