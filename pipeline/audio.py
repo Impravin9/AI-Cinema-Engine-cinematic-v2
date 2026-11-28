@@ -26,29 +26,54 @@ def probe_duration(path) -> float | None:
         return None
 
 
-def _windows_sapi_narrate(text: str, output: Path) -> bool:
-    """Offline Windows speech fallback; writes a WAV without requiring internet."""
+def _windows_sapi_narrate(text: str, output: Path, log=print) -> bool:
+    """Offline Windows SAPI fallback; uses an encoded PowerShell script and UTF-8 text file."""
     import base64
     import os
     if os.name != "nt":
         return False
-    encoded = base64.b64encode(text.encode("utf-8")).decode("ascii")
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    text_file = output.with_suffix(".txt")
+    ps_quote = lambda value: str(value).replace("'", "''")
+    text_file.write_text(text, encoding="utf-8")
     script = (
+        "$ErrorActionPreference = 'Stop'; "
         "Add-Type -AssemblyName System.Speech; "
         "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
-        "$s.SetOutputToWaveFile($args[0]); "
-        "$t = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($args[1])); "
-        "$s.Speak($t); $s.Dispose()"
+        "try { "
+        "$voices = @($s.GetInstalledVoices() | Where-Object { $_.Enabled }); "
+        "if ($voices.Count -eq 0) { throw 'Windows has no enabled speech voices installed.' }; "
+        f"$t = [System.IO.File]::ReadAllText('{ps_quote(text_file)}', [System.Text.Encoding]::UTF8); "
+        f"$s.SetOutputToWaveFile('{ps_quote(output)}'); "
+        "$s.Speak($t); $s.SetOutputToNull(); "
+        "} finally { $s.Dispose() }"
     )
+    encoded_script = base64.b64encode(script.encode("utf-16le")).decode("ascii")
     try:
-        subprocess.run(
-            ["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-             "-Command", script, str(output), encoded],
-            check=True, capture_output=True, text=True, timeout=90,
+        result = subprocess.run(
+            ["powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive",
+             "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded_script],
+            capture_output=True, text=True, timeout=180,
         )
-        return output.exists() and output.stat().st_size > 1024
-    except (OSError, subprocess.SubprocessError):
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout or "PowerShell returned a non-zero exit code").strip()
+            log(f"[cinematic] Windows offline TTS error: {detail[-1000:]}")
+            return False
+        if output.exists() and output.stat().st_size > 1024:
+            try:
+                with wave.open(str(output), "rb") as wav_file:
+                    return wav_file.getnframes() > 0
+            except (wave.Error, OSError) as exc:
+                log(f"[cinematic] Windows offline TTS produced an invalid WAV: {exc}")
+        else:
+            log("[cinematic] Windows offline TTS produced no audio; check that a Windows speech voice is installed.")
         return False
+    except (OSError, subprocess.SubprocessError) as exc:
+        log(f"[cinematic] Windows offline TTS could not start: {type(exc).__name__}: {exc}")
+        return False
+    finally:
+        text_file.unlink(missing_ok=True)
 
 
 def narrate(scenes, workdir: Path, voice: str, rate: str, log=print) -> dict[int, Path]:
@@ -98,7 +123,7 @@ def narrate(scenes, workdir: Path, voice: str, rate: str, log=print) -> dict[int
                 if mp3.exists() and mp3.stat().st_size <= 1024:
                     mp3.unlink(missing_ok=True)
 
-        if _windows_sapi_narrate(text, wav):
+        if _windows_sapi_narrate(text, wav, log):
             out[i] = wav
             log(f"[cinematic] narration {i + 1}/{len(scenes)}: offline Windows voice")
         else:
